@@ -2,37 +2,49 @@ version: '3.8'
 
 services:
   vote:
-    build: ./vote  # Assure-toi que ce répertoire contient le Dockerfile du module vote
+    image: vote_image
     ports:
-      - "5000:8080"  # Mappe le port 8080 du conteneur à 5000 sur l'hôte
+      - "5000:8080"
     environment:
-      - REDIS_HOST=redis  # On remplace localhost par redis
+      - REDIS_HOST=redis
     depends_on:
-      - redis  # Démarre redis avant vote
+      - redis
     networks:
       - backend
+    deploy:
+      replicas: 2  # Nombre de réplicas pour ce service
+      restart_policy:
+        condition: on-failure  # Relancer en cas de plantage
 
   worker:
-    build: ./worker  # Assure-toi que ce répertoire contient le Dockerfile du module worker
+    image: worker_image
     environment:
-      - REDIS_HOST=redis  # Connexion à Redis
-      - POSTGRES_HOST=postgresql  # Connexion à PostgreSQL
+      - REDIS_HOST=redis
+      - POSTGRES_HOST=postgresql
     depends_on:
       - redis
       - postgresql
     networks:
       - backend
+    deploy:
+      replicas: 2  # Nombre de réplicas pour ce service
+      restart_policy:
+        condition: on-failure
 
   result:
-    build: ./result  # Assure-toi que ce répertoire contient le Dockerfile du module result
+    image: result_image
     ports:
-      - "5001:8888"  # Mappe le port 8888 du conteneur à 5001 sur l'hôte
+      - "5001:8888"
     environment:
-      - POSTGRES_HOST=postgresql  # Connexion à PostgreSQL
+      - POSTGRES_HOST=postgresql
     depends_on:
       - postgresql
     networks:
       - backend
+    deploy:
+      replicas: 2  # Nombre de réplicas pour ce service
+      restart_policy:
+        condition: on-failure
 
   redis:
     image: redis:latest
@@ -40,6 +52,10 @@ services:
       - "6379:6379"
     networks:
       - backend
+    deploy:
+      replicas: 1  # Redis peut rester avec 1 réplique car c'est un cache centralisé
+      restart_policy:
+        condition: on-failure
 
   postgresql:
     image: postgres:latest
@@ -53,10 +69,14 @@ services:
       - backend
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1  # Une seule réplique de la base de données, vu que c'est un service centralisé
+      restart_policy:
+        condition: on-failure
 
 networks:
   backend:
-    driver: bridge
+    driver: overlay  # Utilisation du driver overlay pour les réseaux dans un Swarm
 
 volumes:
   postgres_data:
