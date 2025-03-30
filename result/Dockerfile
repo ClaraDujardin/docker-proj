@@ -6,6 +6,7 @@ WORKDIR /app
 
 # 3. Copier les fichiers nécessaires
 COPY package.json package-lock.json server.js /app/
+COPY views /app/views
 
 # 4. Installer les dépendances
 RUN npm install

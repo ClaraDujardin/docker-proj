@@ -6,6 +6,9 @@ WORKDIR /app
 
 # 3. Copier les fichiers nécessaires
 COPY app.py requirements.txt /app/
+COPY templates/ /app/templates/
+COPY static /app/static
+
 
 # 4. Installer les dépendances
 RUN pip install -r requirements.txt
