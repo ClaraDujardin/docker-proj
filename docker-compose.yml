@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  vote:
+    build: ./vote  # Assure-toi que ce répertoire contient le Dockerfile du module vote
+    ports:
+      - "5000:8080"  # Mappe le port 8080 du conteneur à 5000 sur l'hôte
+    environment:
+      - REDIS_HOST=redis  # On remplace localhost par redis
+    depends_on:
+      - redis  # Démarre redis avant vote
+    networks:
+      - backend
+
+  worker:
+    build: ./worker  # Assure-toi que ce répertoire contient le Dockerfile du module worker
+    environment:
+      - REDIS_HOST=redis  # Connexion à Redis
+      - POSTGRES_HOST=postgresql  # Connexion à PostgreSQL
+    depends_on:
+      - redis
+      - postgresql
+    networks:
+      - backend
+
+  result:
+    build: ./result  # Assure-toi que ce répertoire contient le Dockerfile du module result
+    ports:
+      - "5001:8888"  # Mappe le port 8888 du conteneur à 5001 sur l'hôte
+    environment:
+      - POSTGRES_HOST=postgresql  # Connexion à PostgreSQL
+    depends_on:
+      - postgresql
+    networks:
+      - backend
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  postgresql:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
